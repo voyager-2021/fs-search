@@ -7,11 +7,26 @@ from fs_search.core import (
     display_results,
 )
 from pathlib import Path
-from colorama import Fore, Style
+import time
+import sys
+
+def get_time(func, precision: int):
+    start = time.perf_counter()
+    func()
+    end = time.perf_counter()
+    total = round(end - start, precision)
+    print(f'{func.__name__}() Took {total} seconds to run')
 
 
 def main() -> None:
     """Entry point of the CLI tool."""
+    try:
+        from colorama import Fore, Style, init
+        init(autoreset=True)  # Initializes colorama
+    except ImportError:
+        print("colorama module not found. Install it using 'pip install colorama'.")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(description="Search files and directories.")
     parser.add_argument(
         "-b", "--base-path", type=str, default=".", help="Base path to start the search."
@@ -34,11 +49,18 @@ def main() -> None:
     parser.add_argument(
         "-r", "--relative", action="store_true", help="Display relative paths instead of full paths."
     )
+    parser.add_argument(
+        "-t", "--time", action="store_true", help="Times the search."
+    )
 
     args = parser.parse_args()
 
     # Validate base path
-    base_path = validate_base_path(args.base_path)
+    try:
+        base_path = validate_base_path(args.base_path)
+    except ValueError as e:
+        print(f"{Fore.RED}Error: {e}")
+        return
 
     # Validate extensions
     exclude_exts = [validate_extension(ext) for ext in args.exclude]
@@ -48,13 +70,15 @@ def main() -> None:
 
     # Check conflicting options
     if args.files_only and args.folders_only:
-        print(
-            f"{Fore.RED}Error: You cannot use --files-only and --folders-only together."
-        )
+        print(f"{Fore.RED}Error: You cannot use --files-only and --folders-only together.")
         return
 
-    # Perform the search
     print(f"{Fore.BLUE}Searching in: {base_path}")
+
+    if args.time:
+        start = time.perf_counter()
+
+    # Perform the search
     results = search_files_and_dirs(
         base_path=base_path,
         exclude_exts=exclude_exts,
@@ -62,6 +86,14 @@ def main() -> None:
         files_only=args.files_only,
         folders_only=args.folders_only,
     )
+
+    if args.time:
+        end = time.perf_counter()
+        total = end - start
+
+    if not results:
+        print(f"{Fore.YELLOW}No results found.")
+        return
 
     if args.relative:
         base_path = Path(base_path).resolve()
@@ -74,6 +106,10 @@ def main() -> None:
         display_results(results)
 
     print(f"{Fore.GREEN}Search completed!")
+    
+    if args.time:
+        print(f"{Fore.LIGHTCYAN_EX}Took {total:.8f} seconds.")
+
 
 
 if __name__ == "__main__":

@@ -1,8 +1,10 @@
 from colorama import Fore, Style, init
 from pathlib import Path
 from typing import List
+import time
 import sys
 import os
+
 
 # Initialize colorama
 init(autoreset=True)
@@ -19,7 +21,7 @@ def validate_base_path(base_path_: str) -> Path:
 def validate_extension(extension: str) -> str:
     """Ensure the extension starts with a dot."""
     if not extension.startswith("."):
-        extension = f".{extension}"
+        extension = "." + extension
     return extension
 
 

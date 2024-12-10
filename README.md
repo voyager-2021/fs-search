@@ -107,6 +107,9 @@ Run mypy before commiting. To run mypy (using `mypy`), simply run:
 mypy search_fs --strict
 ```
 
+### Todo
+Optimize lol.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
