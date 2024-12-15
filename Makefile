@@ -21,6 +21,6 @@ source:
 	python -m build --sdist
 
 dist:
-	python -m build --config-setting global-option=--enable-optimizations
+	python -m build
 
 all: clean check dist

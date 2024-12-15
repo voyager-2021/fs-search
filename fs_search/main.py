@@ -8,7 +8,7 @@ from fs_search.core import (
 )
 from pathlib import Path
 import time
-import sys
+
 
 def get_time(func, precision: int):
     start = time.perf_counter()
@@ -25,14 +25,14 @@ def main() -> None:
         init(autoreset=True)  # Initializes colorama
     except ImportError:
         print("colorama module not found. Install it using 'pip install colorama'.")
-        sys.exit(1)
+        exit(1)
 
     parser = argparse.ArgumentParser(description="Search files and directories.")
     parser.add_argument(
         "-b", "--base-path", type=str, default=".", help="Base path to start the search."
     )
     parser.add_argument(
-        "-e", "--exclude", action="append", default=[], help="File extensions to exclude (e.g., .log)."
+        "-e", "--exclude-exts", action="append", default=[], help="File extensions to exclude (e.g., .log)."
     )
     parser.add_argument(
         "-E", "--exclude-dirs", action="append", default=[], help="Directories to exclude (e.g., node_modules)."
@@ -52,6 +52,18 @@ def main() -> None:
     parser.add_argument(
         "-t", "--time", action="store_true", help="Times the search."
     )
+    parser.add_argument(
+        "-p", "--display-while-searching", action="store_true", help="Displays results while searching."
+    )
+    parser.add_argument(
+        "-s", "--silent", action="store_true", help="Does not output paths usefull for benchmarking."
+    )
+    parser.add_argument(
+        "-n", "--no-caching", action="store_true", help="Does not use or make caches."
+    )
+    parser.add_argument(
+        "-c", "--remake-cache", action="store_true", help="Remakes caches for fresh results. Recomended after making or removing lot of files."
+    )
 
     args = parser.parse_args()
 
@@ -63,14 +75,14 @@ def main() -> None:
         return
 
     # Validate extensions
-    exclude_exts = [validate_extension(ext) for ext in args.exclude]
+    exclude_exts = [validate_extension(ext) for ext in args.exclude_exts]
 
     # Validate directories to exclude
     exclude_dirs = [dir for dir in args.exclude_dirs]
 
     # Check conflicting options
     if args.files_only and args.folders_only:
-        print(f"{Fore.RED}Error: You cannot use --files-only and --folders-only together.")
+        print(f"{Fore.RED}Error: cannot use --files-only and --folders-only together.")
         return
 
     print(f"{Fore.BLUE}Searching in: {base_path}")
@@ -81,10 +93,14 @@ def main() -> None:
     # Perform the search
     results = search_files_and_dirs(
         base_path=base_path,
-        exclude_exts=exclude_exts,
-        exclude_dirs=exclude_dirs,
+        exclude_exts=','.join(exclude_exts),
+        exclude_dirs=','.join(exclude_dirs),
         files_only=args.files_only,
         folders_only=args.folders_only,
+        print_while_searching=args.display_while_searching,
+        silent=args.silent,
+        disable_caching=args.no_caching,
+        remake_cache=args.remake_cache,
     )
 
     if args.time:
@@ -103,7 +119,7 @@ def main() -> None:
     if args.output_file:
         save_results(args.output_file, results)
     else:
-        display_results(results)
+        display_results(results, _silent=args.silent)
 
     print(f"{Fore.GREEN}Search completed!")
     
